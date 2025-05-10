@@ -23,16 +23,15 @@ public class SecondFragment extends Fragment {
     public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        // Replace buttonSecond with saveButton
         binding.saveButton.setOnClickListener(v -> {
-            String task = binding.taskInput.getText().toString();
-            if (!task.isEmpty()) {
-                // Pass the new task back to FirstFragment
+            String task = binding.taskInput.getText().toString().trim();
+            if (task.isEmpty()) {
+                binding.taskInput.setError("Task cannot be empty");
+            } else {
+                // Pass task back
                 Bundle result = new Bundle();
                 result.putString("newTask", task);
                 getParentFragmentManager().setFragmentResult("taskRequest", result);
-
-                // Navigate back
                 NavHostFragment.findNavController(this).navigateUp();
             }
         });
