@@ -1,5 +1,6 @@
 package uk.ac.hope.mcse.android.coursework;
 
+import android.graphics.Color;
 import android.graphics.Paint;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -32,12 +33,16 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskViewHolder
         String task = tasks.get(position);
         holder.taskText.setText(task);
 
+        holder.taskCheckbox.setOnCheckedChangeListener(null);  // Prevent recycling bugs
+        holder.taskCheckbox.setChecked(false);  // Reset state
+
         holder.taskCheckbox.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            // Visual feedback
             if (isChecked) {
                 holder.taskText.setPaintFlags(holder.taskText.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
+                holder.taskText.setTextColor(Color.GRAY);  // Add color feedback
             } else {
                 holder.taskText.setPaintFlags(holder.taskText.getPaintFlags() & (~Paint.STRIKE_THRU_TEXT_FLAG));
+                holder.taskText.setTextColor(Color.BLACK);  // Reset color
             }
         });
     }

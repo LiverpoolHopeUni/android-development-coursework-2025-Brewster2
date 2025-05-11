@@ -7,6 +7,8 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
@@ -15,6 +17,15 @@ import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import java.util.HashSet;
+import java.util.Set;
+import com.google.android.material.snackbar.Snackbar;
+
+import org.json.JSONArray;
+
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -68,30 +79,54 @@ public class FirstFragment extends Fragment {
             @Override
             public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
                 int position = viewHolder.getAdapterPosition();
+                String deletedTask = tasks.get(position);
                 tasks.remove(position);
                 adapter.notifyItemRemoved(position);
                 saveTasks();
                 checkEmptyState();
+
+                // Show Snackbar with Undo
+                Snackbar.make(binding.getRoot(), "Task deleted", Snackbar.LENGTH_LONG)
+                        .setAction("UNDO", v -> {
+                            tasks.add(position, deletedTask);
+                            adapter.notifyItemInserted(position);
+                            saveTasks();
+                            checkEmptyState();
+                        }).show();
             }
         }).attachToRecyclerView(binding.recyclerView);
     }
 
     private void saveTasks() {
         SharedPreferences prefs = requireContext().getSharedPreferences("tasks", Context.MODE_PRIVATE);
-        Set<String> taskSet = new HashSet<>(tasks);
-        prefs.edit().putStringSet("taskList", taskSet).apply();
+        JSONArray jsonArray = new JSONArray(tasks);
+        prefs.edit().putString("taskList", jsonArray.toString()).apply();
     }
 
     private void loadTasks() {
         SharedPreferences prefs = requireContext().getSharedPreferences("tasks", Context.MODE_PRIVATE);
-        tasks.clear();
-        Set<String> savedTasks = prefs.getStringSet("taskList", new HashSet<>());
-        if (savedTasks != null) {
+
+        // Try to load as JSON (new format)
+        String tasksJson = prefs.getString("taskList", null);
+        if (tasksJson != null) {
+            try {
+                JSONArray jsonArray = new JSONArray(tasksJson);
+                tasks.clear();
+                for (int i = 0; i < jsonArray.length(); i++) {
+                    tasks.add(jsonArray.getString(i));
+                }
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+        // Fallback: Load as HashSet (old format)
+        else {
+            Set<String> savedTasks = prefs.getStringSet("taskList", new HashSet<>());
+            tasks.clear();
             tasks.addAll(savedTasks);
         }
-        if (adapter != null) {
-            adapter.notifyDataSetChanged();
-        }
+
+        if (adapter != null) adapter.notifyDataSetChanged();
     }
 
     private void checkEmptyState() {
